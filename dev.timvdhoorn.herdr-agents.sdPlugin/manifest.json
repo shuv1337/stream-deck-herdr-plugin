@@ -7,7 +7,7 @@
 	"Category": "herdr",
 	"CategoryIcon": "imgs/plugin/category-icon",
 	"Icon": "imgs/plugin/marketplace",
-	"URL": "https://github.com/timvdhoorn/stream-deck-herdr-plugin",
+	"URL": "https://github.com/shuv1337/stream-deck-herdr-plugin",
 	"CodePath": "bin/plugin.js",
 	"SDKVersion": 3,
 	"Software": {

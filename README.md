@@ -2,6 +2,10 @@
 
 Live [herdr](https://herdr.dev) agent status on your Elgato Stream Deck.
 
+> Fork of [timvdhoorn/stream-deck-herdr-plugin](https://github.com/timvdhoorn/stream-deck-herdr-plugin)
+> tracking the [shuv1337/herdr](https://github.com/shuv1337/herdr) fork, Stream Deck XL and
+> Linux/OpenDeck. See [FORK.md](FORK.md) for what differs and what is kept compatible.
+
 See which of your AI coding agents are running, busy, blocked, or finished — at a
 glance, on physical keys. Press a key to jump straight to that agent's pane and
 bring your terminal to the foreground. Answer the approval dialog an agent is
@@ -76,7 +80,7 @@ the deck.
 ### From source (Elgato Stream Deck app)
 
 ```bash
-git clone https://github.com/timvdhoorn/stream-deck-herdr-plugin.git
+git clone https://github.com/shuv1337/stream-deck-herdr-plugin.git
 cd stream-deck-herdr-plugin
 bun install
 bun run build
@@ -190,4 +194,4 @@ scripts/install-opendeck.sh --restart   # rebuild + reinstall + restart (OpenDec
 
 ## License
 
-[MIT](LICENSE) © Tim van der Hoorn
+[MIT](LICENSE) © Tim van der Hoorn — fork changes © shuv1337, same license.
