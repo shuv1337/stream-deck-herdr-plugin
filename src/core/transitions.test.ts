@@ -1,11 +1,7 @@
 // src/core/transitions.test.ts
 import { test, expect } from "bun:test";
 import { detectFlips } from "./transitions";
-import type { Agent } from "./agents";
-
-const mk = (status: Agent["status"], paneId: string): Agent => ({
-  name: "claude", status, cwd: "/x/proj", paneId, workspaceId: "w1", focused: false, terminalTitle: "",
-});
+import { mk } from "../../tests/helpers";
 
 test("detects transitions into blocked/done", () => {
   const prev = [mk("working", "p1"), mk("blocked", "p2"), mk("idle", "p3")];

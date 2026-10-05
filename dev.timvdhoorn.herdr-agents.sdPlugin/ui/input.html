@@ -1,0 +1,33 @@
+<!doctype html>
+<html>
+  <head lang="en">
+    <meta charset="utf-8" />
+    <script src="sdpi-components.js"></script>
+  </head>
+  <body>
+    <sdpi-item label="Mode">
+      <sdpi-select setting="mode" default="keys">
+        <option value="keys">Send keys</option>
+        <option value="prompt">Send prompt</option>
+      </sdpi-select>
+    </sdpi-item>
+    <sdpi-item label="Keys">
+      <sdpi-textfield setting="keys" placeholder="enter" default="enter"></sdpi-textfield>
+    </sdpi-item>
+    <sdpi-item label="Prompt">
+      <sdpi-textfield setting="text" placeholder="continue"></sdpi-textfield>
+    </sdpi-item>
+    <sdpi-item label="Label">
+      <sdpi-textfield setting="label" placeholder="(defaults to the keys)"></sdpi-textfield>
+    </sdpi-item>
+    <sdpi-item>
+      <small>
+        Targets the agent herdr currently has focused. Keys are logical names
+        separated by spaces or commas: <code>enter</code>, <code>esc</code>,
+        <code>y</code>, <code>n</code>, <code>1</code>, <code>ctrl+c</code>,
+        <code>shift+tab</code>. Prompt mode submits text + Enter via
+        <code>agent.prompt</code>, which herdr refuses while the agent is blocked.
+      </small>
+    </sdpi-item>
+  </body>
+</html>

@@ -7,15 +7,19 @@ import streamDeck, {
   type DidReceiveSettingsEvent,
   type KeyDownEvent,
   type KeyUpEvent,
+  type KeyAction,
+  type DialAction,
 } from "@elgato/streamdeck";
 import type { AgentStore } from "../core/store";
 import type { HerdrClient } from "../herdr/client";
 import type { TerminalActivator } from "../os/terminal";
 import { pageSlice, PAGE_SIZE } from "../core/pagination";
-import { labelFor, type DisplayMode } from "../core/agents";
+import { labelFor, parseDisplayMode, type DisplayMode } from "../core/agents";
 import { renderKeySvg } from "../core/render";
+import { assignSlots, pageSizeFor, parseSlotSetting, type SlotKey } from "../core/slots";
+import { focusAgent } from "./focus";
 
-type SlotSettings = { slotIndex?: number; display?: DisplayMode };
+type SlotSettings = { slotIndex?: number | string; display?: DisplayMode };
 
 // Press-length threshold: below this a key press focuses the agent, at/above it
 // the press toggles a pin.
@@ -23,8 +27,9 @@ const LONG_PRESS_MS = 400;
 
 @action({ UUID: "dev.timvdhoorn.herdr-agents.slot" })
 export class AgentSlotAction extends SingletonAction<SlotSettings> {
-  readonly #slots = new Map<string, number>(); // action instance id -> slot index
-  readonly #displays = new Map<string, DisplayMode>(); // action instance id -> display mode
+  readonly #keys = new Map<string, SlotKey>(); // action instance id -> placement
+  readonly #displays = new Map<string, DisplayMode>(); // action instance id -> label source
+  #assigned = new Map<string, number>(); // action instance id -> slot index
   readonly #pressStart = new Map<string, number>(); // action instance id -> keydown timestamp
 
   constructor(
@@ -36,20 +41,17 @@ export class AgentSlotAction extends SingletonAction<SlotSettings> {
   }
 
   override onWillAppear(ev: WillAppearEvent<SlotSettings>): void {
-    this.#slots.set(ev.action.id, Number(ev.payload.settings.slotIndex ?? 0));
-    this.#displays.set(ev.action.id, ev.payload.settings.display ?? "project");
-    this.renderAll();
+    this.#track(ev.action, ev.payload.settings);
   }
 
   override onDidReceiveSettings(ev: DidReceiveSettingsEvent<SlotSettings>): void {
-    this.#slots.set(ev.action.id, Number(ev.payload.settings.slotIndex ?? 0));
-    this.#displays.set(ev.action.id, ev.payload.settings.display ?? "project");
-    this.renderAll();
+    this.#track(ev.action, ev.payload.settings);
   }
 
   override onWillDisappear(ev: WillDisappearEvent<SlotSettings>): void {
-    this.#slots.delete(ev.action.id);
+    this.#keys.delete(ev.action.id);
     this.#displays.delete(ev.action.id);
+    this.#reassign();
   }
 
   override onKeyDown(ev: KeyDownEvent<SlotSettings>): void {
@@ -59,9 +61,7 @@ export class AgentSlotAction extends SingletonAction<SlotSettings> {
   override onKeyUp(ev: KeyUpEvent<SlotSettings>): void {
     const start = this.#pressStart.get(ev.action.id);
     this.#pressStart.delete(ev.action.id);
-    const index = Number(ev.payload.settings.slotIndex ?? 0);
-    const { agents, page } = this.store.getState();
-    const agent = pageSlice(agents, page, PAGE_SIZE)[index];
+    const agent = this.#agentAt(ev.action.id);
     if (!agent) return;
     const longPress = start !== undefined && Date.now() - start >= LONG_PRESS_MS;
     if (longPress) {
@@ -69,58 +69,75 @@ export class AgentSlotAction extends SingletonAction<SlotSettings> {
       // stays visible even when idle. The store emit re-renders all keys.
       this.store.togglePin(agent.paneId);
     } else {
-      void this.#focus(agent.paneId);
-    }
-  }
-
-  async #focus(paneId: string): Promise<void> {
-    try {
-      await this.herdr.focus(paneId);
-    } catch (e) {
-      streamDeck.logger.error(`focus failed: ${String(e)}`);
-    }
-    // Raise the host terminal so the focused pane is actually on screen even when
-    // the terminal was in the background. Independent of focus so a raise failure
-    // never masks a successful pane switch.
-    try {
-      await this.terminal.activate();
-    } catch (e) {
-      streamDeck.logger.error(`raise terminal failed: ${String(e)}`);
+      void focusAgent(this.herdr, this.terminal, agent.paneId);
     }
   }
 
   // Flash the key currently showing this agent, if it is on the visible page.
   flash(paneId: string): void {
-    const { agents, page } = this.store.getState();
-    const visible = pageSlice(agents, page, PAGE_SIZE);
     this.actions.forEach((a) => {
-      if (!a.isKey()) return;
-      const index = this.#slots.get(a.id) ?? 0;
-      if (visible[index]?.paneId === paneId) void a.showAlert();
+      if (a.isKey() && this.#agentAt(a.id)?.paneId === paneId) void a.showAlert();
     });
   }
 
   renderAll(): void {
-    const { agents, page } = this.store.getState();
-    const visible = pageSlice(agents, page, PAGE_SIZE);
+    const { agents, page, pageSize } = this.store.getState();
+    const visible = pageSlice(agents, page, pageSize);
     this.actions.forEach((a) => {
       if (!a.isKey()) return;
-      const index = this.#slots.get(a.id) ?? 0;
-      const display = this.#displays.get(a.id) ?? "project";
-      const agent = visible[index];
+      const index = this.#assigned.get(a.id);
+      const agent = index === undefined ? undefined : visible[index];
       void a.setTitle("");
       void a.setImage(
         renderKeySvg(
           agent
             ? {
-                label: labelFor(agent, agents, display),
+                label: labelFor(agent, agents, this.#displays.get(a.id) ?? "auto"),
                 status: agent.status,
-                agent: agent.name,
+                agent: agent.kind,
                 pinned: this.store.isPinned(agent.paneId),
+                focused: agent.focused,
+                workspaceNumber:
+                  agent.workspaceNumber === Number.MAX_SAFE_INTEGER ? undefined : agent.workspaceNumber,
+                launchPending: agent.launchPending,
               }
             : null,
         ),
       );
     });
+  }
+
+  #agentAt(actionId: string) {
+    const index = this.#assigned.get(actionId);
+    if (index === undefined) return undefined;
+    const { agents, page, pageSize } = this.store.getState();
+    return pageSlice(agents, page, pageSize)[index];
+  }
+
+  #track(key: KeyAction<SlotSettings> | DialAction<SlotSettings>, settings: SlotSettings): void {
+    const coords = key.isKey() ? key.coordinates : undefined;
+    this.#displays.set(key.id, parseDisplayMode(settings.display));
+    this.#keys.set(key.id, {
+      id: key.id,
+      device: key.device.id,
+      row: coords?.row ?? 0,
+      column: coords?.column ?? 0,
+      explicit: parseSlotSetting(settings.slotIndex),
+    });
+    this.#reassign();
+  }
+
+  // Recompute slot numbering + page size from the keys on the deck. Setting the
+  // page size emits from the store (which re-renders); otherwise render here.
+  #reassign(): void {
+    this.#assigned = assignSlots([...this.#keys.values()]);
+    const before = this.store.getState().pageSize;
+    streamDeck.logger.debug(
+      `slots: ${[...this.#keys.values()]
+        .map((k) => `${k.id}@${k.row},${k.column}${k.explicit !== null ? `=${k.explicit}` : ""}→${this.#assigned.get(k.id)}`)
+        .join(" ")}`,
+    );
+    this.store.setPageSize(pageSizeFor(this.#assigned, PAGE_SIZE));
+    if (this.store.getState().pageSize === before) this.renderAll();
   }
 }

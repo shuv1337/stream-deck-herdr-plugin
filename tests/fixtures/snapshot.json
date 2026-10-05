@@ -1,0 +1,97 @@
+{
+  "id": "t",
+  "result": {
+    "type": "session_snapshot",
+    "snapshot": {
+      "version": "0.9.1-shuv.6+9059819d8043",
+      "protocol": 22,
+      "focused_workspace_id": "w1Y2",
+      "focused_tab_id": "w1Y2:t1",
+      "focused_pane_id": "w1Y2:p1",
+      "workspaces": [
+        { "workspace_id": "w1Y2", "number": 1, "label": "shuvbro", "focused": true, "pane_count": 1, "tab_count": 1, "active_tab_id": "w1Y2:t1", "agent_status": "done" },
+        { "workspace_id": "w10F", "number": 2, "label": "└ sb-v2-qualify-shuv2 · p:0kSWdo0pXYEK27Di9W056Q", "focused": false, "pane_count": 1, "tab_count": 1, "active_tab_id": "w10F:t2", "agent_status": "working" },
+        { "workspace_id": "w10J", "number": 3, "label": "└ sb-v2-steer-wakes · p:bY272JwgnjLzEfv34Famyg", "focused": false, "pane_count": 1, "tab_count": 1, "active_tab_id": "w10J:t2", "agent_status": "working" },
+        { "workspace_id": "w10P", "number": 4, "label": "└ sb-pr42-codex-exit · p:6vMWKV2bDAPeKC8Tcw24QQ", "focused": false, "pane_count": 1, "tab_count": 1, "active_tab_id": "w10P:t2", "agent_status": "idle" },
+        { "workspace_id": "w1YB", "number": 5, "label": "beckon", "focused": false, "pane_count": 1, "tab_count": 1, "active_tab_id": "w1YB:t1", "agent_status": "unknown" }
+      ],
+      "tabs": [],
+      "panes": [],
+      "layouts": [],
+      "agents": [
+        {
+          "agent": "codex",
+          "agent_status": "working",
+          "cwd": "/home/shuv/repos/shuvbro",
+          "focused": false,
+          "foreground_cwd": "/home/shuv/.treehouse/shuvbro-f12acf/4/shuvbro",
+          "pane_id": "w10J:p2",
+          "revision": 9,
+          "state_change_seq": 1617,
+          "tab_id": "w10J:t2",
+          "terminal_id": "term_65d0dd691d90514",
+          "terminal_title": "Fix queued watcher delivery | shuvbro",
+          "terminal_title_stripped": "Fix queued watcher delivery | shuvbro",
+          "workspace_id": "w10J"
+        },
+        {
+          "agent": "shuvcode",
+          "display_agent": "OpenCode",
+          "agent_session": { "agent": "shuvcode", "kind": "id", "source": "herdr:shuvcode", "value": "ses_x" },
+          "agent_status": "done",
+          "completion_seq": 1613,
+          "cwd": "/home/shuv/repos/shuvbro",
+          "focused": true,
+          "foreground_cwd": "/home/shuv/repos/shuvbro",
+          "pane_id": "w1Y2:p1",
+          "revision": 9,
+          "screen_detection_skipped": true,
+          "state_change_seq": 1613,
+          "tab_id": "w1Y2:t1",
+          "terminal_id": "term_65d0d2a1fc0e41",
+          "terminal_title": "OC | Session startup request",
+          "terminal_title_stripped": "OC | Session startup request",
+          "title": "Session startup request",
+          "workspace_id": "w1Y2"
+        },
+        {
+          "agent": "codex",
+          "name": "reviewer",
+          "agent_status": "blocked",
+          "cwd": "/home/shuv/repos/shuvbro",
+          "focused": false,
+          "foreground_cwd": "/home/shuv/.treehouse/shuvbro-f12acf/2/shuvbro",
+          "pane_id": "w10F:p2",
+          "revision": 12,
+          "state_change_seq": 1595,
+          "tab_id": "w10F:t2",
+          "terminal_id": "term_65d0dc961e08be",
+          "workspace_id": "w10F"
+        },
+        {
+          "agent": "codex",
+          "agent_status": "idle",
+          "cwd": "/home/shuv/repos/shuvbro",
+          "focused": false,
+          "pane_id": "w10P:p2",
+          "revision": 3,
+          "tab_id": "w10P:t2",
+          "terminal_id": "term_a",
+          "workspace_id": "w10P"
+        },
+        {
+          "agent": "claude",
+          "agent_status": "working",
+          "launch_pending": true,
+          "cwd": "/home/shuv/repos/beckon",
+          "focused": false,
+          "pane_id": "w1YB:p1",
+          "revision": 1,
+          "tab_id": "w1YB:t1",
+          "terminal_id": "term_b",
+          "workspace_id": "w1YB"
+        }
+      ]
+    }
+  }
+}

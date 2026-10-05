@@ -2,10 +2,14 @@
 import type { Agent } from "./agents";
 import { ATTENTION_RANK } from "./status";
 
-export const PAGE_SIZE = 5;
+// Fallback page size when no Agent Slot keys have appeared yet. At runtime the
+// store derives the real page size from the number of slot keys on the deck
+// (6 on a Mini, up to 32 on an XL).
+export const PAGE_SIZE = 8;
+export const MAX_SLOTS = 32;
 
 export function pageCount(count: number, pageSize = PAGE_SIZE): number {
-  return Math.max(1, Math.ceil(count / pageSize));
+  return Math.max(1, Math.ceil(count / Math.max(1, pageSize)));
 }
 
 export function clampPage(page: number, pages: number): number {
@@ -19,7 +23,7 @@ export function pageSlice(agents: Agent[], page: number, pageSize = PAGE_SIZE): 
   return agents.slice(start, start + pageSize);
 }
 
-type Attention = "blocked" | "done";
+export type Attention = "blocked" | "done";
 
 function isOffPage(index: number, page: number, pageSize: number): boolean {
   const start = page * pageSize;
@@ -60,4 +64,9 @@ export function worstAttention(agents: Agent[]): Attention | null {
     const bestRank = best ? ATTENTION_RANK[best] : 0;
     return rank > bestRank ? (a.status as Attention) : best;
   }, null);
+}
+
+// Page that contains the given display index.
+export function pageOf(index: number, pageSize = PAGE_SIZE): number {
+  return Math.floor(Math.max(0, index) / Math.max(1, pageSize));
 }

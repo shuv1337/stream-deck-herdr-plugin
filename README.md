@@ -4,33 +4,44 @@ Live [herdr](https://herdr.dev) agent status on your Elgato Stream Deck.
 
 See which of your AI coding agents are running, busy, blocked, or finished — at a
 glance, on physical keys. Press a key to jump straight to that agent's pane and
-bring your terminal to the foreground. No more hunting through tabs to find the
+bring your terminal to the foreground. Answer the approval dialog an agent is
+stuck on without touching the keyboard. No more hunting through tabs to find the
 agent that's waiting on you.
 
-![herdr agents running on a Stream Deck Mini](docs/deck.png)
+![herdr agents on a Stream Deck XL](docs/deck-xl.png)
 
 ## What it does
 
-- **One key per agent.** Each key mirrors a live herdr agent: project label +
-  status color + a monochrome logo of the agent type (Claude, Codex, …).
+- **One key per agent.** Each key mirrors a live herdr agent: label + status
+  color + a monochrome logo of the agent type (Claude, Codex, OpenCode, …) + the
+  workspace number from herdr's sidebar. The herdr-focused pane gets a white ring.
+- **Sidebar order.** Agents are laid out in the same order as herdr's workspace
+  list, so the deck and the sidebar always agree.
+- **Smart labels** — the agent's name if you renamed it (`herdr agent rename`),
+  else the workspace label (tells worktree clones of one repo apart), else the
+  working directory. Duplicates get `#1`/`#2`.
 - **Status at a glance** — color and glyph encode `working` / `blocked` / `done`
   / `idle` (see the table below).
-- **Press = focus.** A short press runs `herdr agent focus` for that pane *and*
-  raises the host terminal app, so the agent is actually on screen even if the
-  terminal was in the background.
+- **Press = focus.** A short press runs `agent.focus` for that pane *and* raises
+  the host terminal, so the agent is actually on screen even if the terminal was
+  in the background.
 - **Long-press = pin.** Holding a key pins the agent — it jumps to the front,
   stays visible even when it goes idle, and gets a pushpin badge. Pins are
   in-memory (reset when the plugin restarts).
-- **Morphing pager key.** When any agent needs attention it becomes a
-  "jump to the next blocked/done agent" key (cycles on repeat presses);
-  otherwise it pages through the agent grid. One key, both jobs — fits the 6-key
-  Mini.
+- **Agent Input keys.** Send `enter`, `esc`, `y`, `ctrl+c`, … (or a canned
+  prompt) to the agent herdr currently has focused. The key is tinted with that
+  agent's status, so a red key means "there's a dialog waiting for this".
+- **Summary key.** Live counts of working / blocked / done / idle across every
+  agent; goes red when anything is blocked.
+- **Paging & attention.** Dedicated Prev / Next / "jump to the next blocked or
+  done agent" keys — or the original single morphing Pager key for a 6-key Mini.
+- **Toggle idle.** Idle agents are hidden by default so a small deck only shows
+  what matters; one key flips that when you have 32 keys to fill.
 - **Active notifications.** When an agent flips to `blocked` or `done` you get a
   herdr notification with a sound (`request` / `done`) and the key flashes — even
   when you're not looking at the deck.
-- **Idle agents are hidden** so the deck only shows agents that matter.
 - **Instant updates.** Refreshes on herdr socket events (push), with a slow
-  safety-net poll as a backstop — no busy 1-second polling.
+  safety-net poll as a backstop — no busy polling.
 
 ## Status → key
 
@@ -45,25 +56,24 @@ agent that's waiting on you.
 
 ## Tested on
 
-- **Stream Deck Mini** (6 keys)
-- macOS 26 (Apple Silicon)
-- Elgato Stream Deck app **7.4.2**
-- **herdr 0.7.0**
+- **Stream Deck XL** (8×4) on Linux (Arch / Hyprland) with [OpenDeck](https://github.com/nekename/OpenDeck) 2.14
+- **Stream Deck Mini** (6 keys) on macOS 26 with the Elgato Stream Deck app 7.4.2
+- **herdr 0.9.1** (API protocol 22)
 
-The plugin is keypad-only and works on any Stream Deck model with keys. The
-default layout assumes the 6-key Mini, but you can place the two actions on a
-deck of any size.
+The plugin is keypad-only and works on any Stream Deck model with keys. Agent
+Slot keys number themselves by position, so drop as many as you like anywhere on
+the deck.
 
 ## Requirements
 
-- macOS 12 or newer
-- [Elgato Stream Deck](https://www.elgato.com/stream-deck) app 7.1+
-- [herdr](https://herdr.dev) 0.7.0+ installed and running (`herdr` on your `PATH`)
+- [herdr](https://herdr.dev) 0.9+ running (the plugin talks to its API socket
+  directly; `herdr` does not need to be on the plugin's `PATH`)
+- macOS 12+ with the Elgato Stream Deck app 7.1+, **or** Linux with OpenDeck 2.x
 - To build from source: [Bun](https://bun.sh) and Node.js 24
 
 ## Install
 
-### From source
+### From source (Elgato Stream Deck app)
 
 ```bash
 git clone https://github.com/timvdhoorn/stream-deck-herdr-plugin.git
@@ -79,8 +89,6 @@ bunx streamdeck restart dev.timvdhoorn.herdr-agents
 
 ### As a packaged plugin
 
-Produce a double-clickable `.streamDeckPlugin` installer:
-
 ```bash
 bun run build
 bunx streamdeck pack dev.timvdhoorn.herdr-agents.sdPlugin
@@ -89,40 +97,86 @@ bunx streamdeck pack dev.timvdhoorn.herdr-agents.sdPlugin
 This writes `dev.timvdhoorn.herdr-agents.streamDeckPlugin` — double-click it to
 install into the Stream Deck app.
 
+### Linux (OpenDeck)
+
+```bash
+scripts/install-opendeck.sh                      # build, test, install into ~/.config/opendeck/plugins
+scripts/install-opendeck.sh --profile --restart  # …plus write the full-deck layout below and restart OpenDeck
+```
+
+`--profile` generates an OpenDeck profile named `herdr` for the connected device
+(`DEVICE=sd-…` to pick one, `COLUMNS=`/`ROWS=` for a non-XL deck) and selects it;
+your previous profile is left untouched. You can also run the generator alone:
+`bun scripts/opendeck-profile.ts --device sd-XXXX --write`.
+
 ## Layout & usage
 
-In the Stream Deck app, drag the two actions from the **herdr** category onto
-your keys. The recommended 6-key Mini layout:
+Drag actions from the **herdr** category onto your keys. Agent Slot keys number
+themselves left-to-right, top-to-bottom (fix a slot number in the Property
+Inspector only if you want to override that order).
+
+### Stream Deck XL (what `--profile` writes)
 
 ```
-[ Agent Slot 0 ][ Agent Slot 1 ][ Agent Slot 2 ]
-[ Agent Slot 3 ][ Agent Slot 4 ][    Pager      ]
+[ Slot ][ Slot ][ Slot ][ Slot ][ Slot ][ Slot ][ Slot ][ Slot ]
+[ Slot ][ Slot ][ Slot ][ Slot ][ Slot ][ Slot ][ Slot ][ Slot ]
+[ Slot ][ Slot ][ Slot ][ Slot ][ Slot ][ Slot ][ Slot ][ Slot ]
+[Summary][ Prev ][ Next ][Attn.][Idle ][enter ][ esc  ][ctrl+c]
 ```
 
-- **Agent Slot** — set its `slotIndex` (0–4) in the Property Inspector. Each slot
-  shows one agent.
-  - *Short press* → focus that agent's pane + raise the terminal.
-  - *Long press* → pin/unpin the agent.
-- **Pager** — jumps to the next agent needing attention, or pages the grid when
-  none do.
+24 agents per page, with the control strip on the bottom row.
 
-Prefer a flat, no-paging layout? Place six **Agent Slot** keys (`slotIndex` 0–5)
-and skip the pager.
+### Stream Deck Mini
+
+```
+[ Slot ][ Slot ][ Slot ]
+[ Slot ][ Slot ][Pager ]
+```
+
+The **Pager** in `auto` mode is one key with two jobs: when any agent is blocked
+or done it jumps to the next one needing attention (cycling on repeat presses);
+otherwise it pages through the grid.
+
+### Actions
+
+| action | press | settings |
+|--------|-------|----------|
+| **Agent Slot** | short: focus pane + raise terminal · long: pin/unpin | slot: auto / 1–32 |
+| **Pager** | depends on mode | mode: auto · next · prev · attention |
+| **Summary** | raise terminal on the focused agent + refresh | — |
+| **Toggle Idle** | show/hide idle agents | — |
+| **Agent Input** | send keys or a prompt to the focused agent | mode, keys (`enter`, `esc`, `y`, `1`, `ctrl+c`, …), prompt text, label |
+
+Agent Input uses herdr's `agent.send_keys` / `agent.prompt`: keys are validated
+before any bytes are written, and a prompt is refused while the agent sits in an
+approval dialog (the key shows an alert instead).
 
 ## Configuration
 
 | Env var | Default | Purpose |
 |---------|---------|---------|
-| `HERDR_DECK_TERMINAL_APP` | `iTerm` | AppleScript name of the terminal app that hosts herdr. Set it to e.g. `Terminal`, `Ghostty`, or `WezTerm` so "press = focus" brings the right app to the front. |
+| `HERDR_SOCKET_PATH` | herdr's default | Path to the herdr API socket (same override herdr itself honors). |
+| `HERDR_SESSION` | — | Use a named herdr session's socket instead of the default session. |
+| `HERDR_DECK_TERMINAL_APP` | `iTerm` | macOS: AppleScript name of the terminal hosting herdr (`Terminal`, `Ghostty`, `WezTerm`, …). |
+| `HERDR_DECK_HYPRLAND_TITLE` | `^<hostname>: .*` | Linux/Hyprland: full-match regex for the herdr window title (herdr's default title is `{hostname}: {workspace}`). Set to `""` to match by class instead. |
+| `HERDR_DECK_HYPRLAND_CLASS` | `com.mitchellh.ghostty` | Linux/Hyprland: window class used when the title filter is empty. |
+| `HERDR_DECK_LOG` | `info` | Set to `debug` for slot-assignment logging. |
+| `HERDR_DECK_FONT_FAMILY`, `HERDR_DECK_LABEL_SIZE`, `HERDR_DECK_LABEL_COLS`, `HERDR_DECK_LABEL_LINES` | JetBrains Mono · 30 · 6 · 3 | Key label typography. |
 
 ## How it works
 
-A single store polls/streams `herdr agent list`, normalizes the agents, and
-notifies both actions to re-render. All herdr I/O is isolated in
-`src/herdr/*` (injected `run` for tests), the pure logic lives in `src/core/*`
-(unit-tested with `bun test`), and the Stream Deck actions in `src/actions/*` are
-thin glue. Key images are rendered as SVG data URIs for crisp text on the 80×80
-keys.
+The plugin speaks herdr's JSON API over its Unix socket (one request per
+connection, as the server implements it): `session.snapshot` for agents plus the
+ordered workspace list, `agent.focus`, `agent.send_keys`, `agent.prompt`,
+`notification.show`. A single `events.subscribe` stream delivers pane/workspace
+topology events plus a per-pane `pane.agent_status_changed` subscription for
+every known agent pane; the subscription is re-issued whenever the pane set
+changes. A store normalizes the snapshot and notifies every action to re-render.
+
+All herdr I/O is isolated in `src/herdr/*` (injectable `request` for tests), the
+pure logic lives in `src/core/*` (unit-tested with `bun test`), and the Stream Deck
+actions in `src/actions/*` are thin glue. Key images are rendered as base64 SVG
+data URIs for crisp text at any key size.
 
 ## Development
 
@@ -130,7 +184,8 @@ keys.
 bun test                    # run the unit tests
 bunx tsc --noEmit           # type-check
 bun run build               # bundle to …/bin/plugin.js
-bun run watch               # rebuild + restart the plugin on change
+bun run watch               # rebuild + restart the plugin on change (Elgato app)
+scripts/install-opendeck.sh --restart   # rebuild + reinstall + restart (OpenDeck)
 ```
 
 ## License

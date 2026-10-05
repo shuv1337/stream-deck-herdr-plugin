@@ -10,24 +10,14 @@ import {
   attentionAgents,
   worstAttention,
 } from "./pagination";
-import type { Agent } from "./agents";
+import { mk } from "../../tests/helpers";
 
-const mk = (status: Agent["status"], paneId: string): Agent => ({
-  name: "claude",
-  status,
-  cwd: "/x/proj",
-  paneId,
-  workspaceId: "w1",
-  focused: false,
-  terminalTitle: "",
-});
-
-test("PAGE_SIZE is 5 and pageCount has a floor of 1", () => {
-  expect(PAGE_SIZE).toBe(5);
+test("PAGE_SIZE is 8 and pageCount has a floor of 1", () => {
+  expect(PAGE_SIZE).toBe(8);
   expect(pageCount(0)).toBe(1);
-  expect(pageCount(5)).toBe(1);
-  expect(pageCount(6)).toBe(2);
-  expect(pageCount(11)).toBe(3);
+  expect(pageCount(8)).toBe(1);
+  expect(pageCount(9)).toBe(2);
+  expect(pageCount(17)).toBe(3);
 });
 
 test("clampPage keeps page inside range", () => {
@@ -37,29 +27,27 @@ test("clampPage keeps page inside range", () => {
 });
 
 test("pageSlice returns the window for a page", () => {
-  const agents = ["a", "b", "c", "d", "e", "f"].map((p) => mk("idle", p));
-  expect(pageSlice(agents, 1).map((a) => a.paneId)).toEqual(["f"]);
+  const agents = Array.from({ length: 10 }, (_, i) => mk("idle", `p${i}`));
+  expect(pageSlice(agents, 1).map((a) => a.paneId)).toEqual(["p8", "p9"]);
 });
 
 test("offPageWorstAttention ranks blocked > done and ignores working + on-page", () => {
   const agents = [
-    ...["p0", "p1", "p2", "p3", "p4"].map((p) => mk("idle", p)), // page 0
-    mk("working", "p5"),
-    mk("done", "p6"),
-    mk("blocked", "p7"),
+    ...Array.from({ length: 8 }, (_, i) => mk("idle", `p${i}`)), // page 0
+    mk("working", "p8"),
+    mk("done", "p9"),
+    mk("blocked", "p10"),
   ];
   expect(offPageWorstAttention(agents, 0)).toBe("blocked");
-  // working is NOT a notify state, so only done + blocked count
   expect(offPageAttentionCount(agents, 0)).toBe(2);
-  // when the blocked agent is on the current page, it no longer counts off-page
   expect(offPageWorstAttention(agents, 1)).toBe(null);
 });
 
 test("working off-page never raises the pager badge", () => {
   const agents = [
-    ...["p0", "p1", "p2", "p3", "p4"].map((p) => mk("idle", p)),
-    mk("working", "p5"),
-    mk("working", "p6"),
+    ...Array.from({ length: 8 }, (_, i) => mk("idle", `p${i}`)),
+    mk("working", "p8"),
+    mk("working", "p9"),
   ];
   expect(offPageWorstAttention(agents, 0)).toBe(null);
   expect(offPageAttentionCount(agents, 0)).toBe(0);
@@ -67,9 +55,9 @@ test("working off-page never raises the pager badge", () => {
 
 test("idle/unknown off-page produce no badge", () => {
   const agents = [
-    ...["p0", "p1", "p2", "p3", "p4"].map((p) => mk("working", p)),
-    mk("idle", "p5"),
-    mk("unknown", "p6"),
+    ...Array.from({ length: 8 }, (_, i) => mk("working", `p${i}`)),
+    mk("idle", "p8"),
+    mk("unknown", "p9"),
   ];
   expect(offPageWorstAttention(agents, 0)).toBe(null);
   expect(offPageAttentionCount(agents, 0)).toBe(0);

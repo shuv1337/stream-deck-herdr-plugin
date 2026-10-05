@@ -1,0 +1,23 @@
+<!doctype html>
+<html>
+  <head lang="en">
+    <meta charset="utf-8" />
+    <script src="sdpi-components.js"></script>
+  </head>
+  <body>
+    <sdpi-item label="Mode">
+      <sdpi-select setting="mode" default="auto">
+        <option value="auto">Auto (attention, else next page)</option>
+        <option value="next">Next page</option>
+        <option value="prev">Previous page</option>
+        <option value="attention">Jump to attention</option>
+      </sdpi-select>
+    </sdpi-item>
+    <sdpi-item>
+      <small>
+        Auto fits a 6-key Mini: one key that morphs between "jump to the next
+        blocked/done agent" and "next page". On a larger deck, dedicate keys.
+      </small>
+    </sdpi-item>
+  </body>
+</html>

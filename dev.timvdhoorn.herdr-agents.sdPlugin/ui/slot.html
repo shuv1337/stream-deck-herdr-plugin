@@ -6,19 +6,54 @@
   </head>
   <body>
     <sdpi-item label="Slot">
-      <sdpi-select setting="slotIndex" default="0">
+      <sdpi-select setting="slotIndex" default="auto">
+        <option value="auto">Auto (by key position)</option>
         <option value="0">Slot 1</option>
         <option value="1">Slot 2</option>
         <option value="2">Slot 3</option>
         <option value="3">Slot 4</option>
         <option value="4">Slot 5</option>
+        <option value="5">Slot 6</option>
+        <option value="6">Slot 7</option>
+        <option value="7">Slot 8</option>
+        <option value="8">Slot 9</option>
+        <option value="9">Slot 10</option>
+        <option value="10">Slot 11</option>
+        <option value="11">Slot 12</option>
+        <option value="12">Slot 13</option>
+        <option value="13">Slot 14</option>
+        <option value="14">Slot 15</option>
+        <option value="15">Slot 16</option>
+        <option value="16">Slot 17</option>
+        <option value="17">Slot 18</option>
+        <option value="18">Slot 19</option>
+        <option value="19">Slot 20</option>
+        <option value="20">Slot 21</option>
+        <option value="21">Slot 22</option>
+        <option value="22">Slot 23</option>
+        <option value="23">Slot 24</option>
+        <option value="24">Slot 25</option>
+        <option value="25">Slot 26</option>
+        <option value="26">Slot 27</option>
+        <option value="27">Slot 28</option>
+        <option value="28">Slot 29</option>
+        <option value="29">Slot 30</option>
+        <option value="30">Slot 31</option>
+        <option value="31">Slot 32</option>
       </sdpi-select>
     </sdpi-item>
     <sdpi-item label="Display">
-      <sdpi-select setting="display" default="project">
-        <option value="project">Project</option>
+      <sdpi-select setting="display" default="auto">
+        <option value="auto">Auto (name → workspace → project)</option>
+        <option value="project">Project (directory name)</option>
         <option value="title">Terminal title</option>
       </sdpi-select>
+    </sdpi-item>
+    <sdpi-item>
+      <small>
+        Auto numbers Agent Slot keys left-to-right, top-to-bottom. Pick a fixed
+        slot only to override that order; auto keys fill in around it.
+      </small>
     </sdpi-item>
   </body>
 </html>

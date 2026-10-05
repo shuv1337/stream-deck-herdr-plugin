@@ -1,24 +1,55 @@
 import { test, expect } from "bun:test";
-import { feedLines, herdrSocketPath } from "./events";
+import { parseAgentStatusEvent, parseErrorLine, buildSubscribe, samePaneSet, SUBSCRIPTIONS } from "./events";
 
-test("feedLines returns complete lines and keeps the partial remainder", () => {
-  const a = feedLines("", '{"a":1}\n{"b":2}\n{"c"');
-  expect(a.lines).toEqual(['{"a":1}', '{"b":2}']);
-  expect(a.rest).toBe('{"c"');
-  const b = feedLines(a.rest, ':3}\n');
-  expect(b.lines).toEqual(['{"c":3}']);
-  expect(b.rest).toBe("");
+test("parseAgentStatusEvent extracts the typed payload from a status event line", () => {
+  const line = JSON.stringify({
+    id: "sd-sub",
+    event: "pane_agent_status_changed",
+    data: { pane_id: "w1:p2", workspace_id: "w1", agent_status: "blocked", agent: "codex", title: null },
+  });
+  expect(parseAgentStatusEvent(line)).toEqual({
+    paneId: "w1:p2",
+    workspaceId: "w1",
+    status: "blocked",
+    agent: "codex",
+  });
 });
 
-test("feedLines drops blank lines", () => {
-  expect(feedLines("", "\n\n").lines).toEqual([]);
+test("parseAgentStatusEvent ignores acks, other events and garbage", () => {
+  expect(parseAgentStatusEvent('{"id":"sd-sub","result":{"type":"ok"}}')).toBeNull();
+  expect(parseAgentStatusEvent('{"event":"pane_focused","data":{"pane_id":"w1:p1"}}')).toBeNull();
+  expect(parseAgentStatusEvent("not json")).toBeNull();
 });
 
-test("herdrSocketPath honors HERDR_SOCKET_PATH then falls back to the default", () => {
-  const prev = process.env.HERDR_SOCKET_PATH;
-  process.env.HERDR_SOCKET_PATH = "/tmp/x.sock";
-  expect(herdrSocketPath()).toBe("/tmp/x.sock");
-  delete process.env.HERDR_SOCKET_PATH;
-  expect(herdrSocketPath().endsWith("/.config/herdr/herdr.sock")).toBe(true);
-  if (prev !== undefined) process.env.HERDR_SOCKET_PATH = prev;
+test("buildSubscribe adds a per-pane agent-status subscription for each pane", () => {
+  const req = JSON.parse(buildSubscribe(["w1:p1", "w2:p3"]));
+  expect(req.method).toBe("events.subscribe");
+  const subs = req.params.subscriptions as { type: string; pane_id?: string }[];
+  expect(subs.filter((s) => s.type === "pane.agent_status_changed").map((s) => s.pane_id)).toEqual(["w1:p1", "w2:p3"]);
+  expect(subs.filter((s) => s.type === "pane.agent_detected")).toHaveLength(1);
+  // herdr rejects a bare pane.agent_status_changed (pane_id is required)
+  expect(JSON.parse(buildSubscribe([])).params.subscriptions.every((s: { pane_id?: string }) => s.pane_id === undefined)).toBe(true);
+});
+
+test("parseErrorLine recognises the server's error envelope only", () => {
+  expect(parseErrorLine('{"id":"sd-sub","error":{"code":"pane_not_found","message":"gone"}}')).toBe("pane_not_found: gone");
+  expect(parseErrorLine('{"id":"sd-sub","result":{"type":"ok"}}')).toBeNull();
+  expect(parseErrorLine("nope")).toBeNull();
+});
+
+test("samePaneSet ignores order", () => {
+  expect(samePaneSet(["a", "b"], ["b", "a"])).toBe(true);
+  expect(samePaneSet(["a"], ["a", "b"])).toBe(false);
+  expect(samePaneSet([], [])).toBe(true);
+});
+
+test("subscriptions cover pane topology/focus and workspace order", () => {
+  expect(SUBSCRIPTIONS).not.toContain("pane.agent_status_changed"); // per pane, see buildSubscribe
+  expect(SUBSCRIPTIONS).toContain("pane.agent_detected");
+  expect(SUBSCRIPTIONS).toContain("pane.focused");
+  expect(SUBSCRIPTIONS).toContain("workspace.reordered");
+  expect(SUBSCRIPTIONS).toContain("workspace.renamed");
+  // deliberately chatty events stay out
+  expect(SUBSCRIPTIONS).not.toContain("pane.updated");
+  expect(SUBSCRIPTIONS).not.toContain("pane.output_changed");
 });
